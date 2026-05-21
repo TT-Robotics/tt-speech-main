@@ -65,9 +65,8 @@
             box-sizing: border-box;
             outline: none;
         }
-        .btn-group { display: flex; gap: 15px; width: 100%; }
         button {
-            flex: 1;
+            width: 100%;
             border: none;
             padding: 18px;
             border-radius: 12px;
@@ -75,12 +74,11 @@
             cursor: pointer;
             transition: background 0.2s, transform 0.1s;
             font-size: 18px;
+            background: #00d2ff;
+            color: #1e1e2f;
         }
+        button:hover { background: #00b4dc; }
         button:active { transform: scale(0.98); }
-        #speak-btn { background: #00d2ff; color: #1e1e2f; }
-        #speak-btn:hover { background: #00b4dc; }
-        #download-btn { background: #2ecc71; color: #fff; }
-        #download-btn:hover { background: #27ae60; }
     </style>
 </head>
 <body>
@@ -91,15 +89,12 @@
         
         <div class="controls">
             <select id="voice-select">
-                <option value="bn">Bangla (Natural Voice) 🇧🇩</option>
-                <option value="en">English (US Male) 🇺🇸</option>
-                <option value="en-gb">English (UK Female) 🇬🇧</option>
+                <option value="bn-BD">Bangla (Bangladesh) 🇧🇩</option>
+                <option value="en-US">English (United States) 🇺🇸</option>
+                <option value="en-GB">English (United Kingdom) 🇬🇧</option>
             </select>
             
-            <div class="btn-group">
-                <button id="speak-btn">Generate & Play 🔊</button>
-                <button id="download-btn">Download 📥</button>
-            </div>
+            <button id="speak-btn">Generate & Play 🔊</button>
         </div>
     </div>
 
@@ -107,26 +102,38 @@
         const textInput = document.getElementById('text-input');
         const voiceSelect = document.getElementById('voice-select');
         const speakBtn = document.getElementById('speak-btn');
-        const downloadBtn = document.getElementById('download-btn');
 
-        // Main play function: Opens in a tab to fully guarantee it plays without frame errors
         speakBtn.addEventListener('click', () => {
             const text = textInput.value.trim();
             const lang = voiceSelect.value;
-            if (text === '') { alert('Please type some text first!'); return; }
 
-            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
-            window.open(ttsUrl, '_blank');
-        });
+            if (text === '') { 
+                alert('Please type some text first!'); 
+                return; 
+            }
 
-        // Download button: Also opens in a separate tab so the user can save the audio directly
-        downloadBtn.addEventListener('click', () => {
-            const text = textInput.value.trim();
-            const lang = voiceSelect.value;
-            if (text === '') { alert('Please type some text first!'); return; }
+            // Check if the browser supports the native Web Speech API
+            if ('speechSynthesis' in window) {
+                // Stop any speech currently playing
+                window.speechSynthesis.cancel();
+                
+                speakBtn.innerText = "Generating...";
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang;
 
-            const downloadUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
-            window.open(downloadUrl, '_blank');
+                // Set up visual state updates based on audio player tracking
+                utterance.onstart = () => { speakBtn.innerText = "Playing... 🔊"; };
+                utterance.onend = () => { speakBtn.innerText = "Generate & Play 🔊"; };
+                utterance.onerror = () => { 
+                    alert('Speech player issue. Please try again.');
+                    speakBtn.innerText = "Generate & Play 🔊"; 
+                };
+
+                // Play the sound instantly using your browser's system audio
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Your browser does not support speech playback inside this frame.');
+            }
         });
     </script>
 </body>
