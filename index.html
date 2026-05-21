@@ -91,9 +91,9 @@
         
         <div class="controls">
             <select id="voice-select">
-                <option value="bn-BD">Bangla (Natural Voice) 🇧🇩</option>
-                <option value="en-US">English (US Male) 🇺🇸</option>
-                <option value="en-GB">English (UK Female) 🇬🇧</option>
+                <option value="bn">Bangla (Natural Voice) 🇧🇩</option>
+                <option value="en">English (US Male) 🇺🇸</option>
+                <option value="en-gb">English (UK Female) 🇬🇧</option>
             </select>
             
             <div class="btn-group">
@@ -108,50 +108,25 @@
         const voiceSelect = document.getElementById('voice-select');
         const speakBtn = document.getElementById('speak-btn');
         const downloadBtn = document.getElementById('download-btn');
-        let currentAudio = null;
 
-        // Uses a highly-stable, open text-to-speech engine endpoint that bypasses CORS limits
-        function getTtsUrl(text, lang) {
-            return `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
-        }
-
+        // Main play function: Opens in a tab to fully guarantee it plays without frame errors
         speakBtn.addEventListener('click', () => {
             const text = textInput.value.trim();
             const lang = voiceSelect.value;
             if (text === '') { alert('Please type some text first!'); return; }
-            
-            // Web Speech API fallback: works directly inside secure iframes flawlessly
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                speakBtn.innerText = "Generating...";
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = lang;
-                
-                utterance.onstart = () => { speakBtn.innerText = "Playing... 🔊"; };
-                utterance.onend = () => { speakBtn.innerText = "Generate & Play 🔊"; };
-                utterance.onerror = () => { speakBtn.innerText = "Generate & Play 🔊"; };
-                
-                window.speechSynthesis.speak(utterance);
-            } else {
-                // Background fallback method if speech engines fail
-                if (currentAudio) currentAudio.pause();
-                speakBtn.innerText = "Generating...";
-                currentAudio = new Audio(getTtsUrl(text, lang.split('-')[0]));
-                currentAudio.onplaying = () => { speakBtn.innerText = "Playing... 🔊"; };
-                currentAudio.onended = () => { speakBtn.innerText = "Generate & Play 🔊"; };
-                currentAudio.play().catch(() => { speakBtn.innerText = "Generate & Play 🔊"; });
-            }
+
+            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
+            window.open(ttsUrl, '_blank');
         });
 
+        // Download button: Also opens in a separate tab so the user can save the audio directly
         downloadBtn.addEventListener('click', () => {
             const text = textInput.value.trim();
-            const lang = voiceSelect.value.split('-')[0]; // Grabs simple code like 'bn' or 'en'
-            if (text === '') return;
-            
-            const downloadUrl = getTtsUrl(text, lang);
-            const newWindow = window.open(downloadUrl, '_blank');
-            setTimeout(() => { if (newWindow) newWindow.close(); }, 1200);
+            const lang = voiceSelect.value;
+            if (text === '') { alert('Please type some text first!'); return; }
+
+            const downloadUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encodeURIComponent(text)}`;
+            window.open(downloadUrl, '_blank');
         });
     </script>
 </body>
